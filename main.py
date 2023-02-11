@@ -5,52 +5,29 @@ import pyaudio
 from google.oauth2.service_account import Credentials
 from google.cloud import texttospeech
 
-import requests
+import openai
 
 def remove_text_after_human(text):
-    # find the index of the first occurrence of "Human:"
     index = text.find("Human:")
-    
-    # if "Human:" is not found in the text, return the original text
-    if index == -1:
-        return text
-    else:
-        # return the text up to the index of the first occurrence of "Human:"
-        return text[:index]
+    return text[:index] if index != -1 else text
+
 
 def ask_question(question, api_key):
-    # Define the API endpoint
-    endpoint = "https://api.openai.com/v1/engines/davinci/completions"
+    openai.api_key = api_key
 
-    # Define the API key header
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
+    prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly and speaks finnish.\n\nHuman: Hei kuka sinä olet?\nAI: Olen OpenAIn luoma tekoäly. Kuinka voin auttaa sinua tänään?\nHuman: " + question + "?\nAI:"
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=prompt,
+        temperature=0.25,
+        max_tokens=150,
+        top_p=1,
+        frequency_penalty=0.0,
+        presence_penalty=0.6,
+        stop=[" Human:", " AI:"]
+    )
 
-    # Define the API request data
-    data = {
-        "prompt": "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly and speaks finnish.\n\nHuman: Hei kuka sinä olet?\nAI: Olen OpenAIn luoma tekoäly. Kuinka voin auttaa sinua tänään?\nHuman: " + question + "?\nAI:",
-        #"prompt": "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly.\n\nHuman: Hello, who are you?\nAI: I am an AI created by OpenAI. How can I help you today?\nHuman: " + question + ".\nAI:",
-        "temperature": 0.25,
-        "max_tokens": 150,
-        "top_p": 1,
-        "frequency_penalty": 0.0,
-        "presence_penalty": 0.6,
-        "stop": [" Human:", " AI:"]
-    }
-
-    # Make the API request
-    response = requests.post(endpoint, headers=headers, json=data)
-    #print(response.text)
-    # Check the response status code
-    if response.status_code == 200:
-        # Return the response text
-        return remove_text_after_human(response.json()["choices"][0]["text"])
-    else:
-        # Return an error message
-        return "Failed to retrieve response from OpenAI API"
-
+    return remove_text_after_human(response["choices"][0]["text"])
 
 def text_to_speech(text):
     credentials = Credentials.from_service_account_file(
