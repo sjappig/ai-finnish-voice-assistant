@@ -21,7 +21,7 @@ Human: Hei kuka sinä olet?
 AI: Olen OpenAIn luoma tekoäly. Kuinka voin auttaa sinua tänään?
 """]
 
-def ask_question(question, api_key):
+def ask_question(question):
     conversation_history.append("Human: " + question + "?\nAI:")
 
     prompt = "\n".join(conversation_history)
